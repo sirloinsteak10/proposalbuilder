@@ -102,14 +102,10 @@ async function main() {
     },
   });
 
-  // First admin user. Credentials come from the environment, never from source.
-  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  const password = process.env.ADMIN_PASSWORD;
-  const name = process.env.ADMIN_NAME?.trim() || "Admin";
-  if (!email || !password) {
-    console.warn("ADMIN_EMAIL / ADMIN_PASSWORD not set: skipping admin user.");
-    return;
-  }
+  // First admin user. Prefer env secrets; fall back to sample credentials for local/demo.
+  const email = (process.env.ADMIN_EMAIL?.trim() || "admin@oshombali.com").toLowerCase();
+  const password = process.env.ADMIN_PASSWORD || "OshomDemoPass123!";
+  const name = process.env.ADMIN_NAME?.trim() || "Oshom Admin";
   if (password.length < 12) throw new Error("ADMIN_PASSWORD must be at least 12 characters");
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {

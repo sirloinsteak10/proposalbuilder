@@ -162,21 +162,30 @@ export function ProposalList() {
         ) : (
           <ul className="divide-y divide-hair">
             {items.map((p) => (
-              <li key={p.id} className="flex items-center gap-3 px-4 py-3 hover:bg-paper">
-                <Link href={`/proposals/${p.id}`} className="min-w-0 flex-1">
+              <li key={p.id} className="relative flex items-center gap-3 px-4 py-3 hover:bg-paper">
+                <Link
+                  href={`/proposals/${p.id}`}
+                  className="absolute inset-0 z-0"
+                  aria-label={`Open ${p.title}`}
+                />
+                <div className="relative z-10 min-w-0 flex-1 pointer-events-none">
                   <div className="truncate font-medium text-ink">{p.title}</div>
                   <div className="mt-0.5 truncate text-xs text-muted">
                     {longDate(p.eventDate, "en") || "Date TBC"} · Updated {new Date(p.updatedAt).toLocaleString("en-GB")} ·{" "}
                     {p.ownerName}
                   </div>
-                </Link>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLE[p.status]}`}>{STATUS_LABEL[p.status]}</span>
+                </div>
+                <span className={`relative z-10 rounded-full px-2.5 py-1 text-xs font-medium pointer-events-none ${STATUS_STYLE[p.status]}`}>
+                  {STATUS_LABEL[p.status]}
+                </span>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (window.confirm(`Delete "${p.title}"? This cannot be undone.`)) remove.mutate(p.id);
                   }}
-                  className="rounded-md px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                  className="relative z-10 rounded-md px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
                   aria-label={`Delete ${p.title}`}
                 >
                   Delete

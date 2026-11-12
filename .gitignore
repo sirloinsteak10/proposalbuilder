@@ -1,0 +1,22 @@
+# dependencies
+node_modules
+
+# next
+.next
+out
+next-env.d.ts
+
+# env and secrets
+.env
+.env.*
+!.env.example
+acc.md
+
+# generated
+src/generated
+
+# misc
+*.log
+.DS_Store
+*.tsbuildinfo
+.vitest-cache

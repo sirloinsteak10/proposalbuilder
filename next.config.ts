@@ -29,7 +29,20 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   allowedDevOrigins: ["127.0.0.1"],
-  serverExternalPackages: ["puppeteer-core", "pg", "bcryptjs"],
+  serverExternalPackages: ["puppeteer-core", "pg"],
+  // cursor/identity.ts imports ./identity.dev.js (Node ESM style); map to the .ts sibling for Turbopack.
+  turbopack: {
+    resolveAlias: {
+      "./identity.dev.js": "./cursor/identity.dev.ts",
+    },
+  },
+  webpack: (config) => {
+    config.resolve.extensionAlias = {
+      ...(config.resolve.extensionAlias ?? {}),
+      ".js": [".ts", ".tsx", ".js"],
+    };
+    return config;
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

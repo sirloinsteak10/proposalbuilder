@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "luna-proposal-builder",
+      name: "oshom-proposal-builder",
       cwd: "/var/www/proposal-builder",
       script: "node_modules/next/dist/bin/next",
       args: "start -p 36899",

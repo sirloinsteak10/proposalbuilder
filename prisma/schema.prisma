@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum ProposalStatus {
+  DRAFT
+  SENT
+  CONFIRMED
+  ARCHIVED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String
+  passwordHash String
+  role         Role       @default(STAFF)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  proposals    Proposal[]
+}
+
+model Proposal {
+  id        String         @id @default(cuid())
+  ownerId   String
+  owner     User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title     String
+  status    ProposalStatus @default(DRAFT)
+  /// Validated proposal data (see src/lib/schemas/proposal.ts)
+  data      Json
+  /// Incremented on every save; used to detect concurrent edits
+  version   Int            @default(1)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([ownerId, updatedAt])
+  @@index([status])
+}
+
+model Venue {
+  key         String   @id
+  name        String
+  tagline     String   @default("")
+  description String   @default("")
+  seated      Int?
+  standing    Int?
+  features    String[]
+  suitableFor String[]
+  imageUrl    String?
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+}
+
+/// Key/value store for editable defaults (PICs, payment terms, T&C).
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+/// Failed login attempts, used for rate limiting.
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}

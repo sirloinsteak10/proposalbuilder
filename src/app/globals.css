@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #1c1814;
+  --color-deep: #2a241c;
+  --color-teal: #9a7b4f;
+  --color-teal-dark: #7d623d;
+  --color-sky: #c4a574;
+  --color-muted: #6e6458;
+  --color-mint: #e8dfd0;
+  --color-hair: #e2d8c8;
+  --color-paper: #f7f3eb;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-display: var(--font-cormorant), ui-serif, Georgia, "Times New Roman", serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgb(196 165 116 / 0.22), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgb(154 123 79 / 0.12), transparent 50%),
+    var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+}
+
+/* ---------- Proposal document (preview and PDF) ---------- */
+
+.doc-root {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+}
+
+.sheet {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  background: #fff;
+  break-after: page;
+  page-break-after: always;
+  line-height: 1.45;
+}
+
+.sheet:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
+.preview-pages .sheet {
+  margin-bottom: 18px;
+  box-shadow: 0 2px 12px rgb(42 36 28 / 0.16);
+}
+
+.editable-text {
+  outline: 1px dashed transparent;
+  outline-offset: 2px;
+  border-radius: 2px;
+  cursor: text;
+  transition: outline-color 120ms;
+}
+.editable-text:hover {
+  outline-color: var(--color-teal);
+}
+.editable-text:focus {
+  outline: 2px solid var(--color-teal);
+  background: rgb(154 123 79 / 0.08);
+}
+.editable-text[data-edited="true"] {
+  outline-color: var(--color-sky);
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  html,
+  body {
+    background: #fff;
+    height: auto;
+  }
+}

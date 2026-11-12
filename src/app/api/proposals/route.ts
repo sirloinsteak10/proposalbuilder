@@ -18,7 +18,7 @@ const querySchema = z.object({
 });
 
 export const GET = handle(async (req) => {
-  const user = await requireUser();
+  const user = await requireUser(req);
   const { q, status } = querySchema.parse(Object.fromEntries(new URL(req.url).searchParams));
   const where: Prisma.ProposalWhereInput = {
     ...(user.role === "ADMIN" ? {} : { ownerId: user.id }),
@@ -49,7 +49,7 @@ export const GET = handle(async (req) => {
 const createSchema = z.object({ data: z.unknown().optional() });
 
 export const POST = handle(async (req) => {
-  const user = await requireUser();
+  const user = await requireUser(req);
   const hasBody = Number(req.headers.get("content-length") ?? 0) > 0;
   const body = hasBody ? createSchema.parse(await readJson(req)) : {};
   if (body.data !== undefined && (typeof body.data !== "object" || body.data === null)) {

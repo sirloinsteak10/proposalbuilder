@@ -7,8 +7,8 @@ import type { Prisma } from "@/generated/prisma/client";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export const GET = handle<Ctx>(async (_req, { params }) => {
-  const user = await requireUser();
+export const GET = handle<Ctx>(async (req, { params }) => {
+  const user = await requireUser(req);
   const row = await getOwnedProposal(validId((await params).id), user);
   return json(toDto(row));
 });
@@ -24,7 +24,7 @@ const patchSchema = z
   .strict();
 
 export const PATCH = handle<Ctx>(async (req, { params }) => {
-  const user = await requireUser();
+  const user = await requireUser(req);
   const id = validId((await params).id);
   const body = patchSchema.parse(await readJson(req));
   const existing = await getOwnedProposal(id, user);
@@ -48,8 +48,8 @@ export const PATCH = handle<Ctx>(async (req, { params }) => {
   return json(toDto(row));
 });
 
-export const DELETE = handle<Ctx>(async (_req, { params }) => {
-  const user = await requireUser();
+export const DELETE = handle<Ctx>(async (req, { params }) => {
+  const user = await requireUser(req);
   const id = validId((await params).id);
   const result = await prisma.proposal.deleteMany({ where: accessWhere(id, user) });
   if (result.count === 0) throw new ApiError(404, "Proposal not found");

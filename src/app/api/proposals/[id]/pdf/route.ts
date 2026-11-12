@@ -7,8 +7,8 @@ export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export const GET = handle<Ctx>(async (_req, { params }) => {
-  const user = await requireUser();
+export const GET = handle<Ctx>(async (req, { params }) => {
+  const user = await requireUser(req);
   const row = await getOwnedProposal(validId((await params).id), user);
   const pdf = await renderProposalPdf(row.id);
   const name = safeFileName(row.title, "pdf");

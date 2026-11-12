@@ -15,7 +15,7 @@ This app builds event proposals for **Oshom Bali** (wedding packages, venue buyo
 | Database | `proposal_builder` on the local PostgreSQL (user `postgres`) |
 | Chrome | set `CHROME_PATH` to the Chrome/Chromium binary; `CHROME_NO_SANDBOX=1` when the app runs as root |
 
-Sign in at `/login` (opening the site root redirects there) with the admin created by the seed script (`ADMIN_EMAIL` / `ADMIN_PASSWORD`). To change the password later, update `User.passwordHash` with a bcrypt (cost 12) hash.
+Published private/team apps use Cursor sign-in (no email/password). Viewers are mapped to app users on first visit. Locally, a simulated Cursor viewer is used automatically.
 
 ## Updating the live app
 
@@ -34,7 +34,7 @@ Sign in at `/login` (opening the site root redirects there) with the admin creat
 3. `createdb proposal_builder`, then create `.env` from `.env.example` (never commit it). Generate secrets with
    `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`.
 4. `npm install`, `npm audit --omit=dev`, `npx prisma migrate deploy`.
-5. `npx prisma generate` and then `npx prisma db seed`. The seed imports the generated client, so generate must come first. It creates Oshom venues, default texts and the admin user from `ADMIN_*`.
+5. `npx prisma generate` and then `npx prisma db seed`. The seed imports the generated client, so generate must come first. It creates Oshom venues and default proposal texts (no password users).
 6. `npm run build`, set permissions, `pm2 start ecosystem.config.cjs`, `pm2 save`.
 7. Add the Nginx server block below, run `nginx -t`, reload, then `certbot --nginx -d <domain> --redirect`.
 

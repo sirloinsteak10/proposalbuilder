@@ -1,5 +1,4 @@
 import "dotenv/config";
-import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { DEFAULT_PAYMENT_TERMS, DEFAULT_PICS, DEFAULT_TERMS } from "../src/lib/proposal-defaults";
@@ -9,7 +8,6 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  // Venues from Oshom Bali wedding package & buyout materials.
   const venues = [
     {
       key: "lawn",
@@ -87,10 +85,8 @@ async function main() {
     });
   }
 
-  // Retire Luna venue if present from an earlier seed.
   await prisma.venue.updateMany({ where: { key: "elysium" }, data: { active: false } });
 
-  // Editable defaults for new proposals.
   await prisma.setting.upsert({
     where: { key: "defaults" },
     update: {
@@ -102,20 +98,7 @@ async function main() {
     },
   });
 
-  // First admin user. Prefer env secrets; fall back to sample credentials for local/demo.
-  const email = (process.env.ADMIN_EMAIL?.trim() || "admin@oshombali.com").toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || "OshomDemoPass123!";
-  const name = process.env.ADMIN_NAME?.trim() || "Oshom Admin";
-  if (password.length < 12) throw new Error("ADMIN_PASSWORD must be at least 12 characters");
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    console.log(`Admin ${email} already exists; password left unchanged.`);
-    return;
-  }
-  await prisma.user.create({
-    data: { email, name, role: "ADMIN", passwordHash: await bcrypt.hash(password, 12) },
-  });
-  console.log(`Created admin user ${email}.`);
+  console.log("Seeded Oshom venues and proposal defaults (no password users).");
 }
 
 main()

@@ -5,8 +5,8 @@ import { todayIso } from "@/lib/proposal-defaults";
 type Ctx = { params: Promise<{ id: string }> };
 
 /** Downloads the proposal as a `.proposal.json` file (same format the importer reads). */
-export const GET = handle<Ctx>(async (_req, { params }) => {
-  const user = await requireUser();
+export const GET = handle<Ctx>(async (req, { params }) => {
+  const user = await requireUser(req);
   const row = await getOwnedProposal(validId((await params).id), user);
   const file = { app: "oshom-proposal", v: 1, savedAt: new Date().toISOString(), data: parseStoredData(row.data) };
   const name = safeFileName(`Proposal ${todayIso()}`, "proposal.json");

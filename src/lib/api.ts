@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ZodError } from "zod";
-import { getCurrentUser, type SessionUser } from "@/lib/session";
+import { getUserFromRequest, type SessionUser } from "@/lib/session";
 
 export class ApiError extends Error {
   constructor(
@@ -55,8 +55,8 @@ export async function readJson(req: NextRequest, maxBytes = 600_000): Promise<un
   }
 }
 
-export async function requireUser(): Promise<SessionUser> {
-  const user = await getCurrentUser();
+export async function requireUser(req: NextRequest): Promise<SessionUser> {
+  const user = await getUserFromRequest(req);
   if (!user) throw new ApiError(401, "Not signed in");
   return user;
 }

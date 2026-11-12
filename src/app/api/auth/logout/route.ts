@@ -1,7 +1,4 @@
 import { handle, json } from "@/lib/api";
-import { destroySession } from "@/lib/session";
 
-export const POST = handle(async () => {
-  await destroySession();
-  return json({ ok: true });
-});
+/** Cursor hosts manage sign-in; this endpoint is a no-op for client cleanup. */
+export const POST = handle(async () => json({ ok: true }));

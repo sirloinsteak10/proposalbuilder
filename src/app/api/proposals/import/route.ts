@@ -11,7 +11,7 @@ import type { Prisma } from "@/generated/prisma/client";
 
 /** Creates a proposal from a `.proposal.json` file (envelope) or from a bare data object. */
 export const POST = handle(async (req) => {
-  const user = await requireUser();
+  const user = await requireUser(req);
   const body = await readJson(req, PROPOSAL_FILE_MAX_BYTES);
   if (typeof body !== "object" || body === null) throw new ApiError(400, "Not a proposal file");
 

@@ -1,17 +1,9 @@
+import { createHash, randomBytes } from "node:crypto";
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { jwtVerify, SignJWT } from "jose";
+import { getIdentity } from "../../cursor/identity";
 import { prisma } from "@/lib/db";
-
-const isProd = process.env.NODE_ENV === "production";
-export const SESSION_COOKIE = isProd ? "__Host-lpb_session" : "lpb_session";
-const SESSION_TTL_SECONDS = 60 * 60 * 12;
-
-function secret(): Uint8Array {
-  const s = process.env.SESSION_SECRET?.trim() || "oshom-proposal-sample-session-secret-min-32";
-  if (s.length < 32) throw new Error("SESSION_SECRET must be set to at least 32 characters");
-  return new TextEncoder().encode(s);
-}
 
 export interface SessionUser {
   id: string;
@@ -20,45 +12,63 @@ export interface SessionUser {
   role: "ADMIN" | "STAFF";
 }
 
-export async function createSession(userId: string): Promise<void> {
-  const token = await new SignJWT({ typ: "session" })
-    .setProtectedHeader({ alg: "HS256" })
-    .setSubject(userId)
-    .setIssuedAt()
-    .setExpirationTime(`${SESSION_TTL_SECONDS}s`)
-    .sign(secret());
-  const jar = await cookies();
-  jar.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_TTL_SECONDS,
+/** Ephemeral signing key for short-lived print tokens (no hardcoded secret). */
+let printSecret: Uint8Array | undefined;
+function printKey(): Uint8Array {
+  const fromEnv = process.env.PRINT_TOKEN_SECRET?.trim();
+  if (fromEnv && fromEnv.length >= 32) return new TextEncoder().encode(fromEnv);
+  printSecret ??= randomBytes(48);
+  return printSecret;
+}
+
+function emailForSub(sub: string, email: string): string {
+  const trimmed = email.trim().toLowerCase();
+  if (trimmed) return trimmed.slice(0, 200);
+  const slug = createHash("sha256").update(sub).digest("hex").slice(0, 24);
+  return `viewer-${slug}@users.local`;
+}
+
+async function ensureDbUser(identity: {
+  sub: string;
+  email: string;
+  name: string;
+  kind?: string;
+  teamRole?: string;
+}): Promise<SessionUser | null> {
+  if (identity.kind === "key") return null;
+  const email = emailForSub(identity.sub, identity.email);
+  const name = (identity.name.trim() || email.split("@")[0] || "Viewer").slice(0, 120);
+  const role = identity.teamRole === "admin" ? "ADMIN" : "STAFF";
+  // passwordHash is unused with Cursor identity; store an unusable marker (additive schema).
+  const user = await prisma.user.upsert({
+    where: { email },
+    create: {
+      email,
+      name,
+      role,
+      passwordHash: "!",
+    },
+    update: { name, role },
+    select: { id: true, email: true, name: true, role: true },
   });
+  return user;
 }
 
-export async function destroySession(): Promise<void> {
-  const jar = await cookies();
-  jar.set(SESSION_COOKIE, "", { httpOnly: true, secure: isProd, sameSite: "lax", path: "/", maxAge: 0 });
+async function userFromHeaders(headerBag: Headers): Promise<SessionUser | null> {
+  const identity = await getIdentity(headerBag);
+  if (!identity.verified) return null;
+  return ensureDbUser(identity);
 }
 
-/** Returns the signed-in user, or null. Memoised per request. */
+/** Returns the signed-in Cursor viewer as an app user, or null. Memoised per request. */
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
-  const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, secret(), { algorithms: ["HS256"] });
-    if (payload.typ !== "session" || !payload.sub) return null;
-    const user = await prisma.user.findUnique({
-      where: { id: payload.sub },
-      select: { id: true, email: true, name: true, role: true },
-    });
-    return user;
-  } catch {
-    return null;
-  }
+  return userFromHeaders(await headers());
 });
+
+/** API routes pass the request so identity comes from the same headers as the page. */
+export async function getUserFromRequest(req: Request): Promise<SessionUser | null> {
+  return userFromHeaders(req.headers);
+}
 
 /** Short-lived token that lets the headless browser render a single proposal for PDF export. */
 export async function signPrintToken(proposalId: string): Promise<string> {
@@ -66,13 +76,13 @@ export async function signPrintToken(proposalId: string): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("90s")
-    .sign(secret());
+    .sign(printKey());
 }
 
 export async function verifyPrintToken(token: string | undefined, proposalId: string): Promise<boolean> {
   if (!token) return false;
   try {
-    const { payload } = await jwtVerify(token, secret(), { algorithms: ["HS256"] });
+    const { payload } = await jwtVerify(token, printKey(), { algorithms: ["HS256"] });
     return payload.typ === "print" && payload.pid === proposalId;
   } catch {
     return false;
